@@ -1,0 +1,907 @@
+ STEP 1: IMPORT DATASET
+# ------------------------------------------------------------
+
+stroke_data <- read.csv(
+  "data/healthcare-dataset-stroke-data.csv",
+  stringsAsFactors = FALSE
+)
+head(stroke_data)
+dim(stroke_data)
+# ------------------------------------------------------------
+# STEP 2: UNDERSTAND THE DATASET
+# ------------------------------------------------------------
+
+# View all variable names
+names(stroke_data)
+# View dataset structure
+str(stroke_data)
+# Basic descriptive statistics
+summary(stroke_data)
+# Count missing values in each variable
+colSums(is.na(stroke_data))
+#Checks whether something is missing.
+is.na(stroke_data$bmi)
+#Counts the missing values in each column.
+colSums(is.na(stroke_data))
+# Check BMI values represented as "N/A"
+sum(stroke_data$bmi == "N/A")
+# Examine unique BMI values
+unique(stroke_data$bmi)
+# Count different BMI values
+length(unique(stroke_data$bmi))
+# Check gender categories
+table(stroke_data$gender)
+# Check smoking status categories
+table(stroke_data$smoking_status)
+# Check for completely duplicated rows
+sum(duplicated(stroke_data))
+# Check for duplicated patient IDs
+sum(duplicated(stroke_data$id))
+# ------------------------------------------------------------
+# STEP 3: MISSING VALUE ASSESSMENT
+# ------------------------------------------------------------
+
+# Count standard R missing values
+missing_na <- colSums(is.na(stroke_data))
+
+missing_na
+
+# Count BMI values represented as "N/A"
+bmi_na_count <- sum(stroke_data$bmi == "N/A")
+
+bmi_na_count
+
+# Calculate percentage of missing BMI observations
+bmi_missing_percentage <- round(
+  bmi_na_count / nrow(stroke_data) * 100,
+  2
+)
+
+bmi_missing_percentage
+
+# ------------------------------------------------------------
+# STEP 4: CREATE CLEANING COPY
+# ------------------------------------------------------------
+
+# Preserve the original dataset and create a working copy
+stroke_clean <- stroke_data
+
+# Replace "N/A" text with proper R missing values
+stroke_clean$bmi[stroke_clean$bmi == "N/A"] <- NA
+
+# Convert BMI from character to numeric
+stroke_clean$bmi <- as.numeric(stroke_clean$bmi)
+
+# Verify BMI data type
+str(stroke_clean$bmi)
+
+# Count missing BMI observations after conversion
+sum(is.na(stroke_clean$bmi))
+
+# Calculate median BMI excluding missing values
+median_bmi <- median(
+  stroke_clean$bmi,
+  na.rm = TRUE
+)
+
+median_bmi
+
+# Impute missing BMI values using the median
+stroke_clean$bmi[is.na(stroke_clean$bmi)] <- median_bmi
+# Verify BMI missing values after imputation
+sum(is.na(stroke_clean$bmi))
+# Check missing values across the cleaned dataset
+colSums(is.na(stroke_clean))
+# Verify cleaned dataset structure
+str(stroke_clean)
+
+# Compare original and cleaned BMI summaries
+summary(stroke_data$bmi)
+summary(stroke_clean$bmi)
+
+summary(as.numeric(stroke_data$bmi[stroke_data$bmi != "N/A"]))
+summary(stroke_clean$bmi)
+
+# Check for potentially invalid BMI values
+sum(stroke_clean$bmi <= 0)
+# Save cleaned dataset
+write.csv(
+  stroke_clean,
+  "Data/stroke_cleaned.csv",
+  row.names = FALSE
+)
+
+# ------------------------------------------------------------
+# STEP 5: OUTLIER DETECTION
+# ------------------------------------------------------------
+
+# Summary statistics for age
+summary(stroke_clean$age)
+
+# Calculate IQR for age
+IQR(stroke_clean$age)
+
+# Calculate age outlier boundaries
+age_Q1 <- quantile(stroke_clean$age, 0.25)
+age_Q3 <- quantile(stroke_clean$age, 0.75)
+
+age_IQR <- IQR(stroke_clean$age)
+
+age_lower <- age_Q1 - 1.5 * age_IQR
+age_upper <- age_Q3 + 1.5 * age_IQR
+
+age_lower
+age_upper
+
+# Count potential age outliers
+sum(
+  stroke_clean$age < age_lower |
+    stroke_clean$age > age_upper
+)
+
+# Summary statistics for average glucose
+summary(stroke_clean$avg_glucose_level)
+
+# Calculate IQR
+IQR(stroke_clean$avg_glucose_level)
+
+# Calculate glucose outlier boundaries
+glucose_Q1 <- quantile(
+  stroke_clean$avg_glucose_level,
+  0.25
+)
+
+glucose_Q3 <- quantile(
+  stroke_clean$avg_glucose_level,
+  0.75
+)
+
+glucose_IQR <- IQR(
+  stroke_clean$avg_glucose_level
+)
+
+glucose_lower <- glucose_Q1 - 1.5 * glucose_IQR
+glucose_upper <- glucose_Q3 + 1.5 * glucose_IQR
+
+glucose_lower
+glucose_upper
+
+# Count potential glucose outliers
+sum(
+  stroke_clean$avg_glucose_level < glucose_lower |
+    stroke_clean$avg_glucose_level > glucose_upper
+)
+
+# Calculate BMI outlier boundaries
+bmi_Q1 <- quantile(stroke_clean$bmi, 0.25)
+bmi_Q3 <- quantile(stroke_clean$bmi, 0.75)
+
+bmi_IQR <- IQR(stroke_clean$bmi)
+
+bmi_lower <- bmi_Q1 - 1.5 * bmi_IQR
+bmi_upper <- bmi_Q3 + 1.5 * bmi_IQR
+
+bmi_lower
+bmi_upper
+
+# Count potential BMI outliers
+sum(
+  stroke_clean$bmi < bmi_lower |
+    stroke_clean$bmi > bmi_upper
+)
+
+boxplot(
+  stroke_clean$age,
+  main = "Boxplot of Age",
+  ylab = "Age"
+)
+
+boxplot(
+  stroke_clean$avg_glucose_level,
+  main = "Boxplot of Average Glucose Level",
+  ylab = "Average Glucose Level"
+)
+
+boxplot(
+  stroke_clean$bmi,
+  main = "Boxplot of BMI",
+  ylab = "BMI"
+)
+
+# Highest glucose values
+head(
+  sort(stroke_clean$avg_glucose_level, decreasing = TRUE),
+  10
+)
+
+# Highest BMI values
+head(
+  sort(stroke_clean$bmi, decreasing = TRUE),
+  10
+)
+
+# Highest ages
+head(
+  sort(stroke_clean$age, decreasing = TRUE),
+  10
+)
+
+#A.Age
+summary(stroke_clean$age)
+
+IQR(stroke_clean$age)
+
+age_Q1 <- quantile(stroke_clean$age, 0.25)
+age_Q3 <- quantile(stroke_clean$age, 0.75)
+age_IQR <- IQR(stroke_clean$age)
+
+age_lower <- age_Q1 - 1.5 * age_IQR
+age_upper <- age_Q3 + 1.5 * age_IQR
+
+age_lower
+age_upper
+
+sum(
+  stroke_clean$age < age_lower |
+    stroke_clean$age > age_upper
+)
+
+#B.Glucose
+summary(stroke_clean$avg_glucose_level)
+
+IQR(stroke_clean$avg_glucose_level)
+
+glucose_Q1 <- quantile(stroke_clean$avg_glucose_level, 0.25)
+glucose_Q3 <- quantile(stroke_clean$avg_glucose_level, 0.75)
+glucose_IQR <- IQR(stroke_clean$avg_glucose_level)
+
+glucose_lower <- glucose_Q1 - 1.5 * glucose_IQR
+glucose_upper <- glucose_Q3 + 1.5 * glucose_IQR
+
+glucose_lower
+glucose_upper
+
+sum(
+  stroke_clean$avg_glucose_level < glucose_lower |
+    stroke_clean$avg_glucose_level > glucose_upper
+)
+
+#C.BMI
+summary(stroke_clean$bmi)
+
+IQR(stroke_clean$bmi)
+
+bmi_Q1 <- quantile(stroke_clean$bmi, 0.25)
+bmi_Q3 <- quantile(stroke_clean$bmi, 0.75)
+bmi_IQR <- IQR(stroke_clean$bmi)
+
+bmi_lower <- bmi_Q1 - 1.5 * bmi_IQR
+bmi_upper <- bmi_Q3 + 1.5 * bmi_IQR
+
+bmi_lower
+bmi_upper
+
+sum(
+  stroke_clean$bmi < bmi_lower |
+    stroke_clean$bmi > bmi_upper
+)
+
+#D.Boxplot
+boxplot(
+  stroke_clean$age,
+  main = "Boxplot of Age",
+  ylab = "Age"
+)
+
+boxplot(
+  stroke_clean$avg_glucose_level,
+  main = "Boxplot of Average Glucose Level",
+  ylab = "Average Glucose Level"
+)
+
+boxplot(
+  stroke_clean$bmi,
+  main = "Boxplot of BMI",
+  ylab = "BMI"
+  
+)
+
+
+#number of glucose outliers
+sum(
+  stroke_clean$avg_glucose_level < glucose_lower |
+    stroke_clean$avg_glucose_level > glucose_upper
+)
+
+summary(stroke_clean$age)
+
+IQR(stroke_clean$age)
+
+age_Q1 <- quantile(stroke_clean$age, 0.25)
+age_Q3 <- quantile(stroke_clean$age, 0.75)
+
+age_IQR <- IQR(stroke_clean$age)
+
+age_lower <- age_Q1 - 1.5 * age_IQR
+age_upper <- age_Q3 + 1.5 * age_IQR
+
+age_lower
+age_upper
+
+sum(
+  stroke_clean$age < age_lower |
+    stroke_clean$age > age_upper
+)
+
+
+sum(
+  stroke_clean$avg_glucose_level < glucose_lower |
+    stroke_clean$avg_glucose_level > glucose_upper
+)
+
+
+age_lower
+age_upper
+
+sum(
+  stroke_clean$age < age_lower |
+    stroke_clean$age > age_upper
+)
+
+# ------------------------------------------------------------
+# STEP 6: DATA NORMALIZATION
+# ------------------------------------------------------------
+
+# Min-Max normalization for age
+stroke_clean$age_normalized <- (
+  stroke_clean$age - min(stroke_clean$age)
+) / (
+  max(stroke_clean$age) - min(stroke_clean$age)
+)
+
+# Min-Max normalization for average glucose level
+stroke_clean$glucose_normalized <- (
+  stroke_clean$avg_glucose_level -
+    min(stroke_clean$avg_glucose_level)
+) / (
+  max(stroke_clean$avg_glucose_level) -
+    min(stroke_clean$avg_glucose_level)
+)
+
+# Min-Max normalization for BMI
+stroke_clean$bmi_normalized <- (
+  stroke_clean$bmi -
+    min(stroke_clean$bmi)
+) / (
+  max(stroke_clean$bmi) -
+    min(stroke_clean$bmi)
+)
+
+# Check normalized variables
+summary(
+  stroke_clean[
+    c(
+      "age_normalized",
+      "glucose_normalized",
+      "bmi_normalized"
+    )
+  ]
+)
+
+range(stroke_clean$age_normalized)
+
+range(stroke_clean$glucose_normalized)
+
+range(stroke_clean$bmi_normalized)
+
+dim(stroke_clean)
+
+str(stroke_clean)
+
+# ------------------------------------------------------------
+# STEP 7: CATEGORICAL VARIABLE ENCODING
+# ------------------------------------------------------------
+
+# Check gender categories
+table(stroke_clean$gender)
+
+# Check marital status
+table(stroke_clean$ever_married)
+
+# Check work type
+table(stroke_clean$work_type)
+
+# Check residence type
+table(stroke_clean$Residence_type)
+
+# Check smoking status
+table(stroke_clean$smoking_status)
+
+# Convert categorical variables to factors
+
+stroke_clean$gender <- as.factor(stroke_clean$gender)
+
+stroke_clean$ever_married <- as.factor(
+  stroke_clean$ever_married
+)
+
+stroke_clean$work_type <- as.factor(
+  stroke_clean$work_type
+)
+
+stroke_clean$Residence_type <- as.factor(
+  stroke_clean$Residence_type
+)
+
+stroke_clean$smoking_status <- as.factor(
+  stroke_clean$smoking_status
+)
+
+str(
+  stroke_clean[
+    c(
+      "gender",
+      "ever_married",
+      "work_type",
+      "Residence_type",
+      "smoking_status"
+    )
+  ]
+)
+
+# Create one-hot encoded categorical variables
+
+categorical_data <- model.matrix(
+  ~ gender +
+    ever_married +
+    work_type +
+    Residence_type +
+    smoking_status - 1,
+  data = stroke_clean
+)
+
+# Convert to data frame
+categorical_data <- as.data.frame(categorical_data)
+
+# View first few rows
+head(categorical_data)
+
+
+dim(categorical_data)
+names(categorical_data)
+head(categorical_data)
+
+
+# ---------------------------------------------------------
+# STEP 7: CREATE FINAL ANALYSIS-READY DATASET
+# ---------------------------------------------------------
+
+# Select numerical and binary variables
+numeric_data <- stroke_clean[, c(
+  "id",
+  "age",
+  "hypertension",
+  "heart_disease",
+  "avg_glucose_level",
+  "bmi",
+  "stroke",
+  "age_normalized",
+  "glucose_normalized",
+  "bmi_normalized"
+)]
+
+# Combine numerical and categorical data
+stroke_analysis <- cbind(
+  numeric_data,
+  categorical_data
+)
+
+# Check dimensions
+dim(stroke_analysis)
+
+# Check column names
+names(stroke_analysis)
+
+# Check structure
+str(stroke_analysis)
+
+# Check missing values in final dataset
+
+colSums(is.na(stroke_analysis))
+
+# Save final analysis-ready dataset
+
+write.csv(
+  stroke_analysis,
+  "Data/stroke_analysis_ready.csv",
+  row.names = FALSE
+)
+
+# ---------------------------------------------------------
+# STEP 10: PRELIMINARY ANALYSIS
+# ---------------------------------------------------------
+
+# Overall descriptive statistics
+
+summary(stroke_clean)
+# Frequency of stroke outcome
+
+table(stroke_clean$stroke)
+# Percentage distribution of stroke outcome
+
+prop.table(table(stroke_clean$stroke)) * 100
+
+# Gender vs stroke frequency
+
+table(
+  stroke_clean$gender,
+  stroke_clean$stroke
+)
+
+# Row-wise percentages
+
+prop.table(
+  table(
+    stroke_clean$gender,
+    stroke_clean$stroke
+  ),
+  margin = 1
+) * 100
+
+# Hypertension vs stroke
+
+table(
+  stroke_clean$hypertension,
+  stroke_clean$stroke
+)
+
+# Percentage distribution within hypertension groups
+
+prop.table(
+  table(
+    stroke_clean$hypertension,
+    stroke_clean$stroke
+  ),
+  margin = 1
+) * 100
+
+# Heart disease vs stroke
+
+table(
+  stroke_clean$heart_disease,
+  stroke_clean$stroke
+)
+
+# Percentage distribution
+
+prop.table(
+  table(
+    stroke_clean$heart_disease,
+    stroke_clean$stroke
+  ),
+  margin = 1
+) * 100
+
+# Mean age by stroke status
+
+aggregate(
+  age ~ stroke,
+  data = stroke_clean,
+  FUN = mean
+)
+# Median age by stroke status
+
+aggregate(
+  age ~ stroke,
+  data = stroke_clean,
+  FUN = median
+)
+
+# Mean glucose level by stroke status
+
+aggregate(
+  avg_glucose_level ~ stroke,
+  data = stroke_clean,
+  FUN = mean
+)
+
+# Median glucose level by stroke status
+
+aggregate(
+  avg_glucose_level ~ stroke,
+  data = stroke_clean,
+  FUN = median
+)
+
+# Mean BMI by stroke status
+
+aggregate(
+  bmi ~ stroke,
+  data = stroke_clean,
+  FUN = mean
+)
+
+# Median BMI by stroke status
+
+aggregate(
+  bmi ~ stroke,
+  data = stroke_clean,
+  FUN = median
+)
+
+# ---------------------------------------------------------
+# CORRELATION ANALYSIS
+# ---------------------------------------------------------
+
+correlation_matrix <- cor(
+  stroke_clean[, c(
+    "age",
+    "hypertension",
+    "heart_disease",
+    "avg_glucose_level",
+    "bmi",
+    "stroke"
+  )],
+  use = "complete.obs"
+)
+
+
+# Correlation heatmap
+heatmap(
+  correlation_matrix,
+  main = "Correlation Heatmap",
+  symm = TRUE
+)
+
+# Correlation of numerical variables with stroke
+
+stroke_correlation <- correlation_matrix[, "stroke"]
+
+stroke_correlation
+
+# Remove stroke's self-correlation
+stroke_corr <- stroke_correlation[names(stroke_correlation) != "stroke"]
+
+# Create bar plot
+barplot(
+  stroke_corr,
+  main = "Correlation of Variables with Stroke",
+  ylab = "Correlation",
+  las = 2
+)
+
+write.csv(
+  stroke_correlation,
+  "Output/stroke_correlations.csv"
+)
+
+# Stroke outcome distribution
+table(stroke_clean$stroke)
+
+# Stroke percentage
+prop.table(table(stroke_clean$stroke)) * 100
+
+# ---------------------------------------------------------
+# STEP 22: GENDER VS STROKE
+# ---------------------------------------------------------
+
+gender_stroke <- table(
+  stroke_clean$gender,
+  stroke_clean$stroke
+)
+
+gender_stroke
+
+gender_stroke_percentage <- prop.table(
+  gender_stroke,
+  margin = 1
+) * 100
+
+gender_stroke_percentage
+
+# ---------------------------------------------------------
+# STEP 23: HYPERTENSION VS STROKE
+# ---------------------------------------------------------
+
+hypertension_stroke <- table(
+  stroke_clean$hypertension,
+  stroke_clean$stroke
+)
+
+hypertension_stroke
+
+# Calculate percentage within each hypertension group
+
+hypertension_stroke_percentage <- prop.table(
+  hypertension_stroke,
+  margin = 1
+) * 100
+
+hypertension_stroke_percentage
+
+# ---------------------------------------------------------
+# STEP 24: HEART DISEASE VS STROKE
+# ---------------------------------------------------------
+
+heart_disease_stroke <- table(
+  stroke_clean$heart_disease,
+  stroke_clean$stroke
+)
+
+heart_disease_stroke
+
+# Calculate percentage within each heart disease group
+
+heart_disease_stroke_percentage <- prop.table(
+  heart_disease_stroke,
+  margin = 1
+) * 100
+
+heart_disease_stroke_percentage
+
+# ---------------------------------------------------------
+# STEP 25: AGE VS STROKE
+# ---------------------------------------------------------
+
+# Mean age by stroke status
+
+age_mean <- aggregate(
+  age ~ stroke,
+  data = stroke_clean,
+  FUN = mean
+)
+
+age_mean
+
+# Median age by stroke status
+
+age_median <- aggregate(
+  age ~ stroke,
+  data = stroke_clean,
+  FUN = median
+)
+
+age_median
+
+# ---------------------------------------------------------
+# STEP 26: AVERAGE GLUCOSE LEVEL VS STROKE
+# ---------------------------------------------------------
+
+# Mean glucose by stroke status
+
+glucose_mean <- aggregate(
+  avg_glucose_level ~ stroke,
+  data = stroke_clean,
+  FUN = mean
+)
+
+glucose_mean
+
+# Median glucose by stroke status
+
+glucose_median <- aggregate(
+  avg_glucose_level ~ stroke,
+  data = stroke_clean,
+  FUN = median
+)
+
+glucose_median
+
+# ---------------------------------------------------------
+# STEP 27: BMI VS STROKE
+# ---------------------------------------------------------
+
+# Mean BMI by stroke status
+
+bmi_mean <- aggregate(
+  bmi ~ stroke,
+  data = stroke_clean,
+  FUN = mean
+)
+
+bmi_mean
+
+# Median BMI by stroke status
+
+bmi_median <- aggregate(
+  bmi ~ stroke,
+  data = stroke_clean,
+  FUN = median
+)
+
+bmi_median
+
+# ---------------------------------------------------------
+# STEP 28: SMOKING STATUS VS STROKE
+# ---------------------------------------------------------
+
+smoking_stroke <- table(
+  stroke_clean$smoking_status,
+  stroke_clean$stroke
+)
+
+smoking_stroke
+
+# Calculate percentage within each smoking group
+
+smoking_stroke_percentage <- prop.table(
+  smoking_stroke,
+  margin = 1
+) * 100
+
+smoking_stroke_percentage
+
+# ---------------------------------------------------------
+# STEP 29: WORK TYPE VS STROKE
+# ---------------------------------------------------------
+
+worktype_stroke <- table(
+  stroke_clean$work_type,
+  stroke_clean$stroke
+)
+
+worktype_stroke
+
+# Calculate percentage within each work type
+
+worktype_stroke_percentage <- prop.table(
+  worktype_stroke,
+  margin = 1
+) * 100
+
+worktype_stroke_percentage
+
+# ---------------------------------------------------------
+# STEP 30: RESIDENCE TYPE VS STROKE
+# ---------------------------------------------------------
+
+residence_stroke <- table(
+  stroke_clean$Residence_type,
+  stroke_clean$stroke
+)
+
+residence_stroke
+
+# Calculate percentage within each residence group
+
+residence_stroke_percentage <- prop.table(
+  residence_stroke,
+  margin = 1
+) * 100
+
+residence_stroke_percentage
+
+# ---------------------------------------------------------
+# STEP 31: MARITAL STATUS VS STROKE
+# ---------------------------------------------------------
+
+married_stroke <- table(
+  stroke_clean$ever_married,
+  stroke_clean$stroke
+)
+
+married_stroke
+
+# Calculate percentage within each marital-status group
+
+married_stroke_percentage <- prop.table(
+  married_stroke,
+  margin = 1
+) * 100
+
+married_stroke_percentage
+
+# ---------------------------------------------------------
+# STEP 32: STROKE OUTCOME BAR CHART
+# ---------------------------------------------------------
+
+stroke_counts <- table(stroke_clean$stroke)
+
+barplot(
+  stroke_counts,
+  main = "Distribution of Stroke Outcomes",
+  xlab = "Stroke Status",
+  ylab = "Number of Patients",
+  names.arg = c("No Stroke", "Stroke")
+)
+
