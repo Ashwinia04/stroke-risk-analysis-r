@@ -1,0 +1,307 @@
+WEEK 2: DATA VISUALIZATION
+# Stroke Risk Analysis
+# ============================================
+
+# Load required libraries
+library(ggplot2)
+
+# Load cleaned dataset
+stroke_clean <- read.csv("Data/stroke_cleaned.csv")
+
+# Check dataset
+str(stroke_clean)
+
+# Check dimensions
+dim(stroke_clean)
+
+# Check missing values
+colSums(is.na(stroke_clean))
+
+# ============================================
+# 1. Stroke Outcome Distribution
+# ============================================
+
+stroke_counts <- as.data.frame(table(stroke_clean$stroke))
+
+names(stroke_counts) <- c("Stroke", "Count")
+
+stroke_counts$Stroke <- factor(
+  stroke_counts$Stroke,
+  levels = c(0, 1),
+  labels = c("No Stroke", "Stroke")
+)
+
+ggplot(stroke_counts, aes(x = Stroke, y = Count)) +
+  geom_col() +
+  labs(
+    title = "Distribution of Stroke Outcomes",
+    x = "Stroke Status",
+    y = "Number of Patients"
+  ) +
+  theme_minimal()
+ggsave(
+  "Plots/01_stroke_distribution.png",
+  width = 8,
+  height = 5,
+  dpi = 300
+)
+
+# ============================================
+# 2. Age Distribution by Stroke Status
+# ============================================
+
+stroke_clean$stroke_label <- factor(
+  stroke_clean$stroke,
+  levels = c(0, 1),
+  labels = c("No Stroke", "Stroke")
+)
+
+ggplot(stroke_clean, aes(x = age, fill = stroke_label)) +
+  geom_histogram(
+    bins = 30,
+    alpha = 0.6,
+    position = "identity"
+  ) +
+  labs(
+    title = "Age Distribution by Stroke Status",
+    x = "Age",
+    y = "Number of Patients",
+    fill = "Stroke Status"
+  ) +
+  theme_minimal()
+ggsave(
+  "Plots/02_age_distribution.png",
+  width = 8,
+  height = 5,
+  dpi = 300
+)
+
+# ============================================
+# 3. Age vs Average Glucose Level
+# ============================================
+
+ggplot(
+  stroke_clean,
+  aes(
+    x = age,
+    y = avg_glucose_level,
+    color = stroke_label
+  )
+) +
+  geom_point(alpha = 0.5) +
+  labs(
+    title = "Age vs Average Glucose Level by Stroke Status",
+    x = "Age",
+    y = "Average Glucose Level",
+    color = "Stroke Status"
+  ) +
+  theme_minimal()
+
+ggsave(
+  "Plots/03_age_glucose_scatter.png",
+  width = 8,
+  height = 5,
+  dpi = 300
+)
+
+# ============================================
+# 4. BMI Distribution by Stroke Status
+# ============================================
+
+ggplot(
+  stroke_clean,
+  aes(
+    x = stroke_label,
+    y = bmi
+  )
+) +
+  geom_boxplot() +
+  labs(
+    title = "BMI Distribution by Stroke Status",
+    x = "Stroke Status",
+    y = "BMI"
+  ) +
+  theme_minimal()
+
+ggsave(
+  "Plots/04_bmi_stroke_boxplot.png",
+  width = 8,
+  height = 5,
+  dpi = 300
+)
+
+# ============================================
+# 5. Stroke Rate by Hypertension
+# ============================================
+
+hypertension_rate <- aggregate(
+  stroke ~ hypertension,
+  data = stroke_clean,
+  FUN = mean
+)
+
+hypertension_rate$stroke_percentage <-
+  hypertension_rate$stroke * 100
+
+hypertension_rate$hypertension <- factor(
+  hypertension_rate$hypertension,
+  levels = c(0, 1),
+  labels = c("No Hypertension", "Hypertension")
+)
+
+ggplot(
+  hypertension_rate,
+  aes(
+    x = hypertension,
+    y = stroke_percentage
+  )
+) +
+  geom_col() +
+  labs(
+    title = "Stroke Rate by Hypertension Status",
+    x = "Hypertension Status",
+    y = "Stroke Rate (%)"
+  ) +
+  theme_minimal()
+
+ggsave(
+  "Plots/05_hypertension_stroke.png",
+  width = 8,
+  height = 5,
+  dpi = 300
+)
+
+# ============================================
+# 7. Stroke Rate by Smoking Status
+# ============================================
+
+smoking_rate <- aggregate(
+  stroke ~ smoking_status,
+  data = stroke_clean,
+  FUN = mean
+)
+
+smoking_rate$stroke_percentage <-
+  smoking_rate$stroke * 100
+
+ggplot(
+  smoking_rate,
+  aes(
+    x = smoking_status,
+    y = stroke_percentage
+  )
+) +
+  geom_col() +
+  labs(
+    title = "Stroke Rate by Smoking Status",
+    x = "Smoking Status",
+    y = "Stroke Rate (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
+
+ggsave(
+  "Plots/07_smoking_stroke.png",
+  width = 8,
+  height = 5,
+  dpi = 300
+)
+
+# ============================================
+# 8. Stroke Rate by Age Group
+# ============================================
+
+stroke_clean$age_group <- cut(
+  stroke_clean$age,
+  breaks = c(0, 30, 40, 50, 60, 70, 80, Inf),
+  labels = c(
+    "≤30",
+    "31–40",
+    "41–50",
+    "51–60",
+    "61–70",
+    "71–80",
+    "80+"
+  ),
+  include.lowest = TRUE
+)
+
+age_group_rate <- aggregate(
+  stroke ~ age_group,
+  data = stroke_clean,
+  FUN = mean
+)
+
+age_group_rate$stroke_percentage <-
+  age_group_rate$stroke * 100
+
+age_group_rate
+
+ggplot(
+  age_group_rate,
+  aes(
+    x = age_group,
+    y = stroke_percentage,
+    group = 1
+  )
+) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Stroke Rate Across Age Groups",
+    x = "Age Group",
+    y = "Stroke Rate (%)"
+  ) +
+  theme_minimal()
+
+ggsave(
+  "Plots/08_age_group_stroke_rate.png",
+  width = 8,
+  height = 5,
+  dpi = 300
+)
+
+install.packages("corrplot")
+install.packages("corrplot")
+
+correlation_matrix <- cor(
+  stroke_clean[
+    c(
+      "age",
+      "hypertension",
+      "heart_disease",
+      "avg_glucose_level",
+      "bmi",
+      "stroke"
+    )
+  ]
+)
+
+corrplot(
+  correlation_matrix,
+  method = "color",
+  type = "upper",
+  addCoef.col = "black",
+  tl.col = "black",
+  number.cex = 0.7
+)
+
+png(
+  "Plots/09_correlation_heatmap.png",
+  width = 1000,
+  height = 800
+)
+
+corrplot(
+  correlation_matrix,
+  method = "color",
+  type = "upper",
+  addCoef.col = "black",
+  tl.col = "black",
+  number.cex = 0.7
+)
+
+dev.off()
+
